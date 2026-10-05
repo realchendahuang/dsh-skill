@@ -31,10 +31,13 @@ when-to-use: 当任务涉及为 DeepSeek Harness (DSH) 开发插件、编写自�
 | **从零初始化插件项目** | [`playbooks/01-scaffolding.md`](playbooks/01-scaffolding.md) | 包含目录骨架、`package.json`、`tsconfig.json` 与 esbuild 外部化配置 |
 | **开发模型工具 (Tool)** | [`playbooks/02-tool-plugin.md`](playbooks/02-tool-plugin.md) | 参阅 [`references/tools-contract.md`](references/tools-contract.md) 查看参数校验与卡片规范 |
 | **开发权限门禁 / 安全拦截 (Hook)** | [`playbooks/03-hook-plugin.md`](playbooks/03-hook-plugin.md) | 参阅 [`references/execution-pipeline.md`](references/execution-pipeline.md) 查看流水线 5 阶段 |
+| **编写单元测试 (Unit Test)** | [`references/plugin-testing.md`](references/plugin-testing.md) | 基于 Node 原生测试运行器的 Mock 上下文与取消测试 |
+| **扩展配方与子代理 (Presets/Subagents)** | [`references/presets-and-subagents.md`](references/presets-and-subagents.md) | 包含 `ctx.preset` 注册与 `ctx.subagents` 隔离容器驱动 |
 | **开发 UI 或事件流监听器** | [`references/ui-and-events.md`](references/ui-and-events.md) | 包含 `session/event` 监听、`assistant/chunk` 流式处理与 `followup`/`steer` 驱动 |
 | **开发/组织 DSH 技能包 (Skills)** | [`references/skills-subsystem.md`](references/skills-subsystem.md) | 包含 6 级 Rank 发现优先级、`<name>/SKILL.md` 规范与会话目录按需披露机制 |
 | **本地运行与隔离测试** | [`playbooks/04-isolated-dev.md`](playbooks/04-isolated-dev.md) | 包含 `.dsh-dev` 目录与 `cordis.yml` 装配清单配置 |
 | **构建校验与发版前质检** | [`playbooks/05-verification.md`](playbooks/05-verification.md) | 包含 TypeScript 检查、产物审查、外部依赖泄漏排查与发布清单 |
+| **生态目录收录与市场提交** | [`playbooks/06-ecosystem-listings.md`](playbooks/06-ecosystem-listings.md) | 包含 `awesome-dsh-plugin` 与 `dsh-market` 自动化收录提交 |
 
 ---
 

@@ -6,6 +6,9 @@
 [![Runtime](https://img.shields.io/badge/Runtime-DeepSeek%20Harness-brightgreen.svg)](https://github.com/deepseek-ai/deepseek-harness)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/realchendahuang/dsh-skill/pulls)
 [![GitHub stars](https://img.shields.io/github/stars/realchendahuang/dsh-skill?style=social)](https://github.com/realchendahuang/dsh-skill)
+[![GitHub forks](https://img.shields.io/github/forks/realchendahuang/dsh-skill?style=social)](https://github.com/realchendahuang/dsh-skill/network/members)
+[![GitHub issues](https://img.shields.io/github/issues/realchendahuang/dsh-skill)](https://github.com/realchendahuang/dsh-skill/issues)
+[![Code of Conduct](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](CODE_OF_CONDUCT.md)
 [![Follow @realchendahuang](https://img.shields.io/badge/Follow-%40realchendahuang-1DA1F2?logo=x&logoColor=white)](https://x.com/realchendahuang)
 
 > **为 AI 编程助手（Claude Code、Codex、Antigravity、Cursor 及 DSH 自身）提供权威的 DeepSeek Harness 插件与扩展开发规范。**
@@ -121,6 +124,12 @@ Agent 会自动识别并加载本技能：
 - [版本发布历史 (Changelog)](CHANGELOG.md)
 - [DeepSeek Harness 官方仓库](https://github.com/deepseek-ai/deepseek-harness)
 - [dsh-guide (一条消息的旅行 · 交互式源码解析)](https://chendahuang.com/dsh)
+
+---
+
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=realchendahuang/dsh-skill&type=Date)](https://star-history.com/#realchendahuang/dsh-skill&Date)
 
 ---
 

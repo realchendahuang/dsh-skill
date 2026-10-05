@@ -6,6 +6,9 @@
 [![Runtime](https://img.shields.io/badge/Runtime-DeepSeek%20Harness-brightgreen.svg)](https://github.com/deepseek-ai/deepseek-harness)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/realchendahuang/dsh-skill/pulls)
 [![GitHub stars](https://img.shields.io/github/stars/realchendahuang/dsh-skill?style=social)](https://github.com/realchendahuang/dsh-skill)
+[![GitHub forks](https://img.shields.io/github/forks/realchendahuang/dsh-skill?style=social)](https://github.com/realchendahuang/dsh-skill/network/members)
+[![GitHub issues](https://img.shields.io/github/issues/realchendahuang/dsh-skill)](https://github.com/realchendahuang/dsh-skill/issues)
+[![Code of Conduct](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](CODE_OF_CONDUCT.md)
 [![Follow @realchendahuang](https://img.shields.io/badge/Follow-%40realchendahuang-1DA1F2?logo=x&logoColor=white)](https://x.com/realchendahuang)
 
 > **Authoritative development kit and agent skill for DeepSeek Harness (DSH) plugins and extensions.**
@@ -104,6 +107,12 @@ dsh-skill/
 - [Changelog](CHANGELOG.md)
 - [DeepSeek Harness Official Repository](https://github.com/deepseek-ai/deepseek-harness)
 - [Journey of a Message (dsh-guide)](https://chendahuang.com/dsh)
+
+---
+
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=realchendahuang/dsh-skill&type=Date)](https://star-history.com/#realchendahuang/dsh-skill&Date)
 
 ---
 
