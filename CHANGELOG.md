@@ -18,6 +18,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `skills-subsystem.md`: 6-rank discovery hierarchy, directory bundle conventions, and dynamic digest invalidation.
   - `ui-and-events.md`: `session/event` event bus, token streaming (`assistant/chunk`), and steering controls (`followup`, `steer`, `inject`).
   - `packaging-rules.md`: Mandatory externalization rules for `@deepseek-ai/*` dependencies and dual Host/Client runtimes.
+  - `plugin-testing.md`: Unit testing DSH plugins with context mocking and signal tests.
+  - `presets-and-subagents.md`: Extending custom Presets and Subagent execution providers.
 - **Agent Standard Playbooks (`playbooks/`)**:
   - `01-scaffolding.md`: Step-by-step project scaffolding with esbuild and TypeScript.
   - `02-tool-plugin.md`: Production-grade tool plugin implementation.
@@ -26,10 +28,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `05-verification.md`: Quality gates, build artifact inspection, and pack verification.
 - **Ready-to-Use Templates (`templates/`)**:
   - Minimal boilerplate for tool plugins, hook plugins, and skill bundles.
-- **Hybrid Runtime Support**:
+- **Hybrid Runtime & CLI Tooling**:
   - DSH Cordis plugin entry (`src/index.ts`) for dynamic skill registration.
-  - Cross-platform CLI installer (`bin/dsh-skill.mjs`) supporting one-command installation to DSH, Claude Code, Codex, and Antigravity.
-- **Repository Governance**:
+  - Native `dsh.bundle` manifest and `cordis.patch.yml` compatibility for `dsh plugin add`.
+  - Cross-platform CLI (`bin/dsh-skill.mjs`):
+    - `install`: One-command installation to DSH, Claude Code, Codex, and Antigravity.
+    - `status`: Live installation auditing across platforms.
+    - `init`: Automated scaffolding of compliant DSH plugins from templates.
+    - `check`: Automated linter verifying DSH rules, externalized dependencies, and patch manifests.
+- **Repository Governance & Bilingual Docs**:
   - Comprehensive GitHub Actions workflows for continuous integration and automated releases.
   - Bug report and feature request issue templates.
   - Contributing guidelines (`CONTRIBUTING.md`) and Security policy (`SECURITY.md`).
+  - Bilingual documentation with dedicated `README.en.md`.

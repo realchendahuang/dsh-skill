@@ -11,24 +11,26 @@
 > **为 AI 编程助手（Claude Code、Codex、Antigravity、Cursor 及 DSH 自身）提供权威的 DeepSeek Harness 插件与扩展开发规范。**
 > 支持作为 Agent 技能直接发现、作为 Cordis 插件动态挂载，或通过 CLI 一键安装。
 
+[English](README.en.md) | [中文](README.md)
+
 ---
 
-## 快速一键安装（推荐）
+## 快速上手与 CLI 工具
 
-无需手动寻找各个 Agent 的技能安装路径，直接运行：
+无需手动寻找各个 Agent 的技能安装路径，或者从零摸索脚手架，直接运行 CLI：
 
 ```bash
-# 一键安装到本机所有已支持的 Agent（DSH、Claude Code、Codex、Antigravity）
+# 1. 一键安装 Skill 到本机所有 Agent（DSH、Claude Code、Codex、Antigravity）
 npx dsh-skill install
 
-# 或指定安装到单个平台
-npx dsh-skill install dsh           # 仅安装到 DeepSeek Harness (~/.dsh/skills)
-npx dsh-skill install claude        # 仅安装到 Claude Code (~/.claude/skills)
-npx dsh-skill install codex         # 仅安装到 OpenAI Codex (~/.agents/skills)
-npx dsh-skill install antigravity   # 仅安装到 Google Antigravity (~/.gemini/config/skills)
-
-# 检查当前安装状态
+# 2. 检查当前各平台的安装状态
 npx dsh-skill status
+
+# 3. 一键初始化一个全新的标准 DSH 插件项目
+npx dsh-skill init dsh-my-tools
+
+# 4. 诊断与校验已有插件的规范合规性（外部化依赖、dsh.bundle、patch 配置）
+npx dsh-skill check .
 ```
 
 ---
