@@ -22,9 +22,16 @@ English | [中文](README.md)
 
 Get started instantly without manually looking up agent skill paths:
 
-### Method 1: One-Line Shell Installer (Recommended, Auto-Configures CLI)
+### Method 1: One-Line Script Installer (Recommended, Auto-Configures CLI)
+
+**macOS / Linux / WSL:**
 ```bash
 curl -fsSL https://raw.githubusercontent.com/realchendahuang/dsh-skill/main/install.sh | bash
+```
+
+**Windows (PowerShell):**
+```powershell
+irm https://raw.githubusercontent.com/realchendahuang/dsh-skill/main/install.ps1 | iex
 ```
 > Automatically detects local environments, installs to DSH, Claude Code, Codex/Cursor, and Antigravity, and links the `dsh-skill` CLI to your PATH.
 
@@ -52,11 +59,59 @@ Once installed, run `dsh-skill` from any directory:
 # 1. Check skill installation status across platforms
 dsh-skill status
 
-# 2. Scaffold a brand-new, production-ready DSH plugin project
+# 2. Scaffold a standard Tool Plugin (default)
 dsh-skill init dsh-my-tools
 
-# 3. Audit an existing plugin for DSH compliance and rule violations
+# 3. Scaffold an Execution Guard & Security Hook Plugin
+dsh-skill init dsh-my-guard --type hook
+
+# 4. Scaffold an Agent Skill Bundle
+dsh-skill init dsh-my-skill --type skill
+
+# 5. Audit an existing plugin for DSH compliance and rule violations (8-step check)
 dsh-skill check .
+
+# 6. Refresh and update installed skills to latest release
+dsh-skill update
+```
+
+---
+
+## System Architecture & Workflow
+
+```mermaid
+graph TD
+    subgraph Clients["1. AI Coding Assistants (Discovery)"]
+        DSH["DeepSeek Harness (Native)"]
+        Claude["Claude Code"]
+        Codex["OpenAI Codex / Cursor"]
+        AGY["Antigravity / Gemini"]
+    end
+
+    subgraph Skill["2. dsh-plugin-dev Skill (Knowledge & SOP)"]
+        S["SKILL.md (Task Router)"]
+        R["Contract References (Cordis / Pipeline / Tools / Packaging)"]
+        P["Playbooks (Scaffolding / Isolated Dev / Verification)"]
+        T["Scaffold Templates (Tool / Hook / Skill Bundle)"]
+    end
+
+    subgraph Runtime["3. DeepSeek Harness Runtime (Execution)"]
+        Kernel["Cordis Microkernel (Container & Dependency Injection)"]
+        Pipe["5-Stage Execution Pipeline (Pre / Guard / Exec / Post / Result)"]
+        Tools["Model-Facing Tools (defineTool / Structured I/O)"]
+        Cards["Pure-Function UI Cards (presentCall / presentResult)"]
+        Events["Event Stream (session/event & assistant/chunk)"]
+    end
+
+    Clients --> S
+    S --> R
+    S --> P
+    S --> T
+    P --> Kernel
+    Kernel --> Pipe
+    Pipe --> Tools
+    Pipe --> Cards
+    Kernel --> Events
 ```
 
 ---

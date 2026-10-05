@@ -23,8 +23,15 @@
 无需手动寻找各个 Agent 的技能安装路径，或者从零摸索脚手架，直接使用一键安装：
 
 ### 方式一：终端一行脚本静默直装（推荐，全自动部署与配置 CLI）
+
+**macOS / Linux / WSL：**
 ```bash
 curl -fsSL https://raw.githubusercontent.com/realchendahuang/dsh-skill/main/install.sh | bash
+```
+
+**Windows (PowerShell)：**
+```powershell
+irm https://raw.githubusercontent.com/realchendahuang/dsh-skill/main/install.ps1 | iex
 ```
 > 自动识别本机环境，一键部署到 DSH、Claude Code、Codex/Cursor 与 Antigravity 技能目录，并自动链接 `dsh-skill` 命令行工具。
 
@@ -52,11 +59,59 @@ dsh plugin --profile web add git+https://github.com/realchendahuang/dsh-skill.gi
 # 1. 检查当前各平台的安装状态
 dsh-skill status
 
-# 2. 一键初始化一个全新的标准 DSH 插件项目
+# 2. 一键初始化一个全新的标准 DSH 插件项目（默认工具插件）
 dsh-skill init dsh-my-tools
 
-# 3. 诊断与校验已有插件的规范合规性（外部化依赖、dsh.bundle、patch 配置）
+# 3. 初始化安全门禁钩子插件
+dsh-skill init dsh-my-guard --type hook
+
+# 4. 初始化独立 Agent 技能包
+dsh-skill init dsh-my-skill --type skill
+
+# 5. 诊断与校验已有插件的规范合规性（8 项硬契约质检）
 dsh-skill check .
+
+# 6. 一键更新所有平台的技能包到最新版本
+dsh-skill update
+```
+
+---
+
+## 系统架构与工作流全景
+
+```mermaid
+graph TD
+    subgraph Clients["1. AI 编程助手客户端 (Discovery)"]
+        DSH["DeepSeek Harness (Native)"]
+        Claude["Claude Code"]
+        Codex["OpenAI Codex / Cursor"]
+        AGY["Antigravity / Gemini"]
+    end
+
+    subgraph Skill["2. dsh-plugin-dev 技能库 (Knowledge & SOP)"]
+        S["SKILL.md (任务路由决策树)"]
+        R["硬契约参考 (Cordis / Pipeline / Tools / Packaging)"]
+        P["标准作业程序 (Scaffolding / Isolated Dev / Verification)"]
+        T["代码脚手架模板 (Tool / Hook / Skill Bundle)"]
+    end
+
+    subgraph Runtime["3. DeepSeek Harness 运行时环境 (Execution)"]
+        Kernel["Cordis 微内核 (依赖注入 & 作用域管理)"]
+        Pipe["执行流水线 5 阶段 (Pre / Guard / Exec / Post / Result)"]
+        Tools["模型工具 (defineTool / 结构化输入输出)"]
+        Cards["纯函数 UI 卡片 (presentCall / presentResult)"]
+        Events["流式事件通道 (session/event & assistant/chunk)"]
+    end
+
+    Clients --> S
+    S --> R
+    S --> P
+    S --> T
+    P --> Kernel
+    Kernel --> Pipe
+    Pipe --> Tools
+    Pipe --> Cards
+    Kernel --> Events
 ```
 
 ---

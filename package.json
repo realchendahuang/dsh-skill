@@ -19,7 +19,8 @@
     "CHANGELOG.md",
     "LICENSE",
     "cordis.patch.yml",
-    "install.sh"
+    "install.sh",
+    "install.ps1"
   ],
   "dsh": {
     "bundle": {

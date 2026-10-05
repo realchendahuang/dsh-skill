@@ -72,7 +72,7 @@ install_to() {
   local target_dir="$2"
 
   mkdir -p "$target_dir"
-  for item in SKILL.md references playbooks templates bin cordis.patch.yml; do
+  for item in SKILL.md references playbooks templates bin cordis.patch.yml install.ps1; do
     if [ -e "${SOURCE_DIR}/${item}" ]; then
       cp -R "${SOURCE_DIR}/${item}" "${target_dir}/"
     fi

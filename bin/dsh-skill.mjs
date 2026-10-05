@@ -34,17 +34,24 @@ function printHelp() {
   printBanner()
   console.log(`
 Usage:
-  dsh-skill install [target]    Install skill to your Agent environment
-  dsh-skill status              Check installation status across platforms
-  dsh-skill init <name>         Scaffold a new DSH plugin from templates
-  dsh-skill check [path]        Verify DSH plugin compliance and rules
-  dsh-skill help                Show this help message
+  dsh-skill install [target]            Install skill to agent environments & link CLI
+  dsh-skill status                      Check installation status across platforms
+  dsh-skill init <name> [--type <t>]    Scaffold a DSH plugin (tool, hook, or skill)
+  dsh-skill check [path]                Verify DSH plugin compliance and rules
+  dsh-skill update                      Refresh installed skills and CLI across platforms
+  dsh-skill uninstall                   Remove skill from all platforms and unlink CLI
+  dsh-skill help                        Show this help message
+
+Options for init:
+  --type tool       Scaffold a standard Tool Plugin (default)
+  --type hook       Scaffold an Execution Guard & Security Hook Plugin
+  --type skill      Scaffold an Agent Skill Bundle
 
 Install Targets:
   all           Install to all detected platforms (default)
   dsh           Install to DeepSeek Harness (~/.dsh/skills/dsh-plugin-dev)
   claude        Install to Claude Code (~/.claude/skills/dsh-plugin-dev)
-  codex         Install to OpenAI Codex (~/.agents/skills/dsh-plugin-dev)
+  codex         Install to OpenAI Codex / Cursor (~/.agents/skills/dsh-plugin-dev)
   antigravity   Install to Google Antigravity (~/.gemini/config/skills/dsh-plugin-dev)
 `)
 }
@@ -56,6 +63,9 @@ function installTo(targetName, destPath) {
     for (const item of itemsToCopy) {
       const src = resolve(rootDir, item)
       const dst = resolve(destPath, item)
+      if (src === dst) {
+        continue
+      }
       if (existsSync(src)) {
         cpSync(src, dst, { recursive: true })
       }
@@ -135,8 +145,15 @@ function runInit() {
   const pluginName = args[1]
   if (!pluginName) {
     console.error('\x1b[31mError:\x1b[0m Please provide a plugin name.')
-    console.log('Example: dsh-skill init dsh-my-tools\n')
+    console.log('Example: dsh-skill init dsh-my-tools [--type tool|hook|skill]\n')
     process.exit(1)
+  }
+
+  // Parse type flag: --type <type> or --template <type>
+  let templateType = 'tool'
+  const typeIndex = args.findIndex(a => a === '--type' || a === '--template' || a === '-t')
+  if (typeIndex !== -1 && args[typeIndex + 1]) {
+    templateType = args[typeIndex + 1].toLowerCase()
   }
 
   const targetDir = resolve(process.cwd(), pluginName)
@@ -145,22 +162,46 @@ function runInit() {
     process.exit(1)
   }
 
-  console.log(`Scaffolding new DSH plugin in \x1b[36m${pluginName}\x1b[0m...\n`)
+  console.log(`Scaffolding new DSH ${templateType} in \x1b[36m${pluginName}\x1b[0m...\n`)
 
-  mkdirSync(resolve(targetDir, 'src'), { recursive: true })
-  mkdirSync(resolve(targetDir, 'scripts'), { recursive: true })
+  if (templateType === 'skill') {
+    mkdirSync(targetDir, { recursive: true })
+    mkdirSync(resolve(targetDir, 'references'), { recursive: true })
+    mkdirSync(resolve(targetDir, 'playbooks'), { recursive: true })
+    let templateSkill = resolve(rootDir, 'templates/skill-bundle/SKILL.md')
+    if (!existsSync(templateSkill)) {
+      for (const candPath of Object.values(TARGETS)) {
+        const cand = resolve(candPath, 'templates/skill-bundle/SKILL.md')
+        if (existsSync(cand)) {
+          templateSkill = cand
+          break
+        }
+      }
+    }
+    const skillContent = readFileSync(templateSkill, 'utf8')
+      .replace(/<skill-name>/g, pluginName)
+    writeFileSync(resolve(targetDir, 'SKILL.md'), skillContent)
+    console.log(`\x1b[32m✔ Skill bundle ${pluginName} created successfully!\x1b[0m\n`)
+    return
+  }
 
-  // 1. Copy template files with fallback
-  let templateDir = resolve(rootDir, 'templates/tool-plugin')
+  // tool or hook plugin
+  const templateDirName = templateType === 'hook' ? 'templates/hook-plugin' : 'templates/tool-plugin'
+  let templateDir = resolve(rootDir, templateDirName)
   if (!existsSync(templateDir)) {
     for (const candPath of Object.values(TARGETS)) {
-      const cand = resolve(candPath, 'templates/tool-plugin')
+      const cand = resolve(candPath, templateDirName)
       if (existsSync(cand)) {
         templateDir = cand
         break
       }
     }
   }
+
+  mkdirSync(resolve(targetDir, 'src'), { recursive: true })
+  mkdirSync(resolve(targetDir, 'scripts'), { recursive: true })
+
+  // 1. Copy template files with fallback
   cpSync(resolve(templateDir, 'src/index.ts'), resolve(targetDir, 'src/index.ts'))
 
   // 2. Write package.json
@@ -185,11 +226,11 @@ function runInit() {
     keywords: ['dsh-plugin', 'deepseek-harness'],
     peerDependencies: {
       '@deepseek-ai/cordis': '>=1.0.0',
-      '@deepseek-ai/dsh-tools': '>=1.0.0',
+      ...(templateType === 'tool' ? { '@deepseek-ai/dsh-tools': '>=1.0.0' } : {}),
     },
     devDependencies: {
       '@deepseek-ai/cordis': '^1.0.0',
-      '@deepseek-ai/dsh-tools': '^1.0.0',
+      ...(templateType === 'tool' ? { '@deepseek-ai/dsh-tools': '^1.0.0' } : {}),
       esbuild: '^0.23.0',
       typescript: '^5.5.0',
     },
@@ -221,6 +262,11 @@ function runInit() {
   writeFileSync(resolve(targetDir, 'tsconfig.json'), JSON.stringify(tsconfigContent, null, 2) + '\n')
 
   // 5. Write scripts/build.mjs
+  const externalList = [
+    "'@deepseek-ai/*'",
+    "'@deepseek-ai/cordis'",
+    ...(templateType === 'tool' ? ["'@deepseek-ai/dsh-tools'"] : []),
+  ]
   const buildScript = `import esbuild from 'esbuild'
 
 await esbuild.build({
@@ -232,9 +278,7 @@ await esbuild.build({
   format: 'esm',
   sourcemap: true,
   external: [
-    '@deepseek-ai/*',
-    '@deepseek-ai/cordis',
-    '@deepseek-ai/dsh-tools',
+    ${externalList.join(',\n    ')}
   ],
 })
 
@@ -243,9 +287,9 @@ console.log('Build completed: dist/index.js')
   writeFileSync(resolve(targetDir, 'scripts/build.mjs'), buildScript)
 
   // 6. Write README.md
-  writeFileSync(resolve(targetDir, 'README.md'), `# ${pluginName}\n\nA plugin for DeepSeek Harness.\n`)
+  writeFileSync(resolve(targetDir, 'README.md'), `# ${pluginName}\n\nA ${templateType} plugin for DeepSeek Harness.\n`)
 
-  console.log(`\x1b[32m✔ Plugin ${pluginName} created successfully!\x1b[0m\n`)
+  console.log(`\x1b[32m✔ Plugin ${pluginName} (${templateType}) created successfully!\x1b[0m\n`)
   console.log('Next steps:')
   console.log(`  cd ${pluginName}`)
   console.log('  pnpm install')
@@ -315,6 +359,14 @@ function runCheck() {
     fail('cordis.patch.yml is missing (required by dsh.bundle).')
   }
 
+  // Check tsconfig.json
+  const tsconfigPath = resolve(targetDir, 'tsconfig.json')
+  if (existsSync(tsconfigPath)) {
+    pass('tsconfig.json exists.')
+  } else {
+    fail('tsconfig.json not found.')
+  }
+
   // Check src/index.ts
   const srcPath = resolve(targetDir, 'src/index.ts')
   if (existsSync(srcPath)) {
@@ -328,10 +380,53 @@ function runCheck() {
     fail('src/index.ts entry file not found.')
   }
 
+  // Check build script externalization if exists
+  const buildMjsPath = resolve(targetDir, 'scripts/build.mjs')
+  if (existsSync(buildMjsPath)) {
+    const buildCode = readFileSync(buildMjsPath, 'utf8')
+    if (buildCode.includes('@deepseek-ai/*')) {
+      pass('scripts/build.mjs correctly externalizes @deepseek-ai/* packages.')
+    } else {
+      fail('scripts/build.mjs does not declare @deepseek-ai/* as external.')
+    }
+  }
+
   console.log(`\nAudit finished: \x1b[32m${passed} passed\x1b[0m, \x1b[31m${failed} failed\x1b[0m.\n`)
   if (failed > 0) {
     process.exit(1)
   }
+}
+
+function runUpdate() {
+  printBanner()
+  console.log('Refreshing installed skills across all platforms...\n')
+  for (const [name, path] of Object.entries(TARGETS)) {
+    if (existsSync(path)) {
+      installTo(name, path)
+    }
+  }
+  installCliShim()
+  console.log('\n\x1b[36mUpdate completed successfully!\x1b[0m\n')
+}
+
+function runUninstall() {
+  printBanner()
+  console.log('Uninstalling dsh-plugin-dev from local platforms...\n')
+  let count = 0
+  for (const [name, path] of Object.entries(TARGETS)) {
+    if (existsSync(path)) {
+      rmSync(path, { recursive: true, force: true })
+      console.log(`\x1b[32m✔ Removed from ${name}:\x1b[0m ${path}`)
+      count++
+    }
+  }
+  const shimPath = resolve(home, '.local/bin/dsh-skill')
+  if (existsSync(shimPath)) {
+    rmSync(shimPath, { force: true })
+    console.log(`\x1b[32m✔ Removed CLI executable:\x1b[0m ${shimPath}`)
+    count++
+  }
+  console.log(`\n\x1b[36mUninstallation complete! Cleaned up ${count} items.\x1b[0m\n`)
 }
 
 switch (command) {
@@ -346,6 +441,12 @@ switch (command) {
     break
   case 'check':
     runCheck()
+    break
+  case 'update':
+    runUpdate()
+    break
+  case 'uninstall':
+    runUninstall()
     break
   case 'help':
   case '--help':
