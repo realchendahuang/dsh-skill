@@ -34,11 +34,11 @@ function printHelp() {
   printBanner()
   console.log(`
 Usage:
-  npx dsh-skill install [target]    Install skill to your Agent environment
-  npx dsh-skill status              Check installation status across platforms
-  npx dsh-skill init <name>         Scaffold a new DSH plugin from templates
-  npx dsh-skill check [path]        Verify DSH plugin compliance and rules
-  npx dsh-skill help                Show this help message
+  dsh-skill install [target]    Install skill to your Agent environment
+  dsh-skill status              Check installation status across platforms
+  dsh-skill init <name>         Scaffold a new DSH plugin from templates
+  dsh-skill check [path]        Verify DSH plugin compliance and rules
+  dsh-skill help                Show this help message
 
 Install Targets:
   all           Install to all detected platforms (default)
@@ -52,7 +52,7 @@ Install Targets:
 function installTo(targetName, destPath) {
   try {
     mkdirSync(destPath, { recursive: true })
-    const itemsToCopy = ['SKILL.md', 'references', 'playbooks', 'templates']
+    const itemsToCopy = ['SKILL.md', 'references', 'playbooks', 'templates', 'bin']
     for (const item of itemsToCopy) {
       const src = resolve(rootDir, item)
       const dst = resolve(destPath, item)
@@ -68,6 +68,30 @@ function installTo(targetName, destPath) {
   }
 }
 
+function installCliShim() {
+  try {
+    const localBin = resolve(home, '.local/bin')
+    mkdirSync(localBin, { recursive: true })
+    const shimPath = resolve(localBin, 'dsh-skill')
+    const primaryDir = TARGETS.codex || TARGETS.dsh
+    const scriptTarget = resolve(primaryDir, 'bin/dsh-skill.mjs')
+
+    const shimContent = `#!/usr/bin/env bash
+if command -v node >/dev/null 2>&1; then
+  exec node "${scriptTarget}" "$@"
+else
+  echo "Error: Node.js is required to run dsh-skill CLI." >&2
+  exit 1
+fi
+`
+    writeFileSync(shimPath, shimContent, { mode: 0o755 })
+    console.log(`\x1b[32m✔ CLI executable linked to:\x1b[0m ${shimPath}`)
+    return true
+  } catch (err) {
+    return false
+  }
+}
+
 function runInstall() {
   printBanner()
   const targetArg = (args[1] || 'all').toLowerCase()
@@ -77,9 +101,11 @@ function runInstall() {
     for (const [name, path] of Object.entries(TARGETS)) {
       installTo(name, path)
     }
+    installCliShim()
   } else if (TARGETS[targetArg]) {
     console.log(`Installing dsh-plugin-dev skill to ${targetArg}...\n`)
     installTo(targetArg, TARGETS[targetArg])
+    installCliShim()
   } else {
     console.error(`Unknown target: ${targetArg}`)
     console.log('Available targets: all, dsh, claude, codex, antigravity')
@@ -99,6 +125,8 @@ function runStatus() {
       : '\x1b[33mNot Installed\x1b[0m'
     console.log(`- ${name.padEnd(12)}: ${statusText} (${path})`)
   }
+  const shimInstalled = existsSync(resolve(home, '.local/bin/dsh-skill'))
+  console.log(`- ${'cli (PATH)'.padEnd(12)}: ${shimInstalled ? '\x1b[32mInstalled\x1b[0m' : '\x1b[33mNot Installed\x1b[0m'} (${resolve(home, '.local/bin/dsh-skill')})`)
   console.log('')
 }
 
@@ -107,7 +135,7 @@ function runInit() {
   const pluginName = args[1]
   if (!pluginName) {
     console.error('\x1b[31mError:\x1b[0m Please provide a plugin name.')
-    console.log('Example: npx dsh-skill init dsh-my-tools\n')
+    console.log('Example: dsh-skill init dsh-my-tools\n')
     process.exit(1)
   }
 
@@ -122,8 +150,17 @@ function runInit() {
   mkdirSync(resolve(targetDir, 'src'), { recursive: true })
   mkdirSync(resolve(targetDir, 'scripts'), { recursive: true })
 
-  // 1. Copy template files
-  const templateDir = resolve(rootDir, 'templates/tool-plugin')
+  // 1. Copy template files with fallback
+  let templateDir = resolve(rootDir, 'templates/tool-plugin')
+  if (!existsSync(templateDir)) {
+    for (const candPath of Object.values(TARGETS)) {
+      const cand = resolve(candPath, 'templates/tool-plugin')
+      if (existsSync(cand)) {
+        templateDir = cand
+        break
+      }
+    }
+  }
   cpSync(resolve(templateDir, 'src/index.ts'), resolve(targetDir, 'src/index.ts'))
 
   // 2. Write package.json

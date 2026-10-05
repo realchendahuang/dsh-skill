@@ -18,22 +18,45 @@ English | [中文](README.md)
 
 ---
 
-## Quickstart & CLI
+## Quickstart & Installation
 
-Install the skill across your local agent environments or scaffold a new plugin in seconds:
+Get started instantly without manually looking up agent skill paths:
+
+### Method 1: One-Line Shell Installer (Recommended, Auto-Configures CLI)
+```bash
+curl -fsSL https://raw.githubusercontent.com/realchendahuang/dsh-skill/main/install.sh | bash
+```
+> Automatically detects local environments, installs to DSH, Claude Code, Codex/Cursor, and Antigravity, and links the `dsh-skill` CLI to your PATH.
+
+### Method 2: Via NPX
+```bash
+# Install skill and link CLI locally
+npx github:realchendahuang/dsh-skill install
+
+# Check platform installation status
+npx github:realchendahuang/dsh-skill status
+```
+
+### Method 3: Native DSH Plugin (Cordis Layer Injection)
+```bash
+dsh plugin --profile web add git+https://github.com/realchendahuang/dsh-skill.git
+```
+
+---
+
+## CLI Toolkit Usage
+
+Once installed, run `dsh-skill` from any directory:
 
 ```bash
-# 1. Install skill to all detected Agent environments (DSH, Claude Code, Codex, Antigravity)
-npx dsh-skill install
+# 1. Check skill installation status across platforms
+dsh-skill status
 
-# 2. Check skill installation status across platforms
-npx dsh-skill status
+# 2. Scaffold a brand-new, production-ready DSH plugin project
+dsh-skill init dsh-my-tools
 
-# 3. Scaffold a brand-new, production-ready DSH plugin project
-npx dsh-skill init dsh-my-tools
-
-# 4. Audit an existing plugin for DSH compliance and rule violations
-npx dsh-skill check .
+# 3. Audit an existing plugin for DSH compliance and rule violations
+dsh-skill check .
 ```
 
 ---

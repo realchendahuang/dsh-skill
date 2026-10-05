@@ -18,22 +18,45 @@
 
 ---
 
-## 快速上手与 CLI 工具
+## 快速安装与上手
 
-无需手动寻找各个 Agent 的技能安装路径，或者从零摸索脚手架，直接运行 CLI：
+无需手动寻找各个 Agent 的技能安装路径，或者从零摸索脚手架，直接使用一键安装：
+
+### 方式一：终端一行脚本静默直装（推荐，全自动部署与配置 CLI）
+```bash
+curl -fsSL https://raw.githubusercontent.com/realchendahuang/dsh-skill/main/install.sh | bash
+```
+> 自动识别本机环境，一键部署到 DSH、Claude Code、Codex/Cursor 与 Antigravity 技能目录，并自动链接 `dsh-skill` 命令行工具。
+
+### 方式二：通过 NPX 运行
+```bash
+# 一键安装技能并链接 CLI 到本机
+npx github:realchendahuang/dsh-skill install
+
+# 检查当前各平台的安装状态
+npx github:realchendahuang/dsh-skill status
+```
+
+### 方式三：DSH 原生插件机制（Cordis 动态挂载）
+```bash
+dsh plugin --profile web add git+https://github.com/realchendahuang/dsh-skill.git
+```
+
+---
+
+## CLI 工具箱用法
+
+安装完成后，直接在任意目录运行 `dsh-skill`：
 
 ```bash
-# 1. 一键安装 Skill 到本机所有 Agent（DSH、Claude Code、Codex、Antigravity）
-npx dsh-skill install
+# 1. 检查当前各平台的安装状态
+dsh-skill status
 
-# 2. 检查当前各平台的安装状态
-npx dsh-skill status
+# 2. 一键初始化一个全新的标准 DSH 插件项目
+dsh-skill init dsh-my-tools
 
-# 3. 一键初始化一个全新的标准 DSH 插件项目
-npx dsh-skill init dsh-my-tools
-
-# 4. 诊断与校验已有插件的规范合规性（外部化依赖、dsh.bundle、patch 配置）
-npx dsh-skill check .
+# 3. 诊断与校验已有插件的规范合规性（外部化依赖、dsh.bundle、patch 配置）
+dsh-skill check .
 ```
 
 ---

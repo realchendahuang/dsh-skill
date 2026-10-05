@@ -13,6 +13,11 @@ test('SKILL.md exists and has valid frontmatter', () => {
   assert.ok(existsSync(skillPath), 'SKILL.md must exist')
 })
 
+test('install.sh exists and is executable', () => {
+  const installShPath = resolve(rootDir, 'install.sh')
+  assert.ok(existsSync(installShPath), 'install.sh must exist')
+})
+
 test('CLI prints banner and help without error', () => {
   const cliPath = resolve(rootDir, 'bin/dsh-skill.mjs')
   const stdout = execFileSync('node', [cliPath, 'help'], { encoding: 'utf8' })

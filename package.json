@@ -18,7 +18,8 @@
     "README.md",
     "CHANGELOG.md",
     "LICENSE",
-    "cordis.patch.yml"
+    "cordis.patch.yml",
+    "install.sh"
   ],
   "dsh": {
     "bundle": {
