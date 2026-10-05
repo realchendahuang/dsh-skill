@@ -1,0 +1,27 @@
+{
+  "name": "dsh-tool-template",
+  "version": "0.1.0",
+  "description": "Template for DSH tool plugins",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "keywords": [
+    "dsh-plugin",
+    "deepseek-harness"
+  ],
+  "peerDependencies": {
+    "@deepseek-ai/cordis": ">=1.0.0",
+    "@deepseek-ai/dsh-tools": ">=1.0.0"
+  },
+  "devDependencies": {
+    "@deepseek-ai/cordis": "^1.0.0",
+    "@deepseek-ai/dsh-tools": "^1.0.0",
+    "esbuild": "^0.23.0",
+    "typescript": "^5.5.0"
+  }
+}
