@@ -1,0 +1,53 @@
+{
+  "name": "dsh-skill",
+  "version": "0.1.0",
+  "description": "Official development kit and agent skill for DeepSeek Harness (DSH) plugins and extensions.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "bin": {
+    "dsh-skill": "./bin/dsh-skill.mjs"
+  },
+  "files": [
+    "dist",
+    "bin",
+    "references",
+    "playbooks",
+    "templates",
+    "SKILL.md",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "typecheck": "tsc --noEmit",
+    "test": "node --test test/*.test.mjs",
+    "verify": "npm run typecheck && npm run build && npm run test"
+  },
+  "keywords": [
+    "dsh",
+    "deepseek",
+    "deepseek-harness",
+    "dsh-plugin",
+    "agent-skill",
+    "claude-code",
+    "codex",
+    "antigravity",
+    "cordis"
+  ],
+  "author": "realchendahuang",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/realchendahuang/dsh-skill.git"
+  },
+  "bugs": {
+    "url": "https://github.com/realchendahuang/dsh-skill/issues"
+  },
+  "homepage": "https://github.com/realchendahuang/dsh-skill#readme",
+  "devDependencies": {
+    "esbuild": "^0.23.0",
+    "typescript": "^5.5.0"
+  }
+}

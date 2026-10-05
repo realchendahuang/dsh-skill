@@ -1,10 +1,35 @@
 # dsh-skill · DeepSeek Harness 官方规范开发技能库
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![DeepSeek Harness](https://img.shields.io/badge/Runtime-DeepSeek%20Harness-brightgreen.svg)](https://github.com/deepseek-ai/deepseek-harness)
+[![GitHub release](https://img.shields.io/github/v/release/realchendahuang/dsh-skill?color=brightgreen&label=release)](https://github.com/realchendahuang/dsh-skill/releases)
+[![CI Status](https://img.shields.io/github/actions/workflow/status/realchendahuang/dsh-skill/ci.yml?branch=main&label=CI)](https://github.com/realchendahuang/dsh-skill/actions)
+[![Runtime](https://img.shields.io/badge/Runtime-DeepSeek%20Harness-brightgreen.svg)](https://github.com/deepseek-ai/deepseek-harness)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/realchendahuang/dsh-skill/pulls)
+[![GitHub stars](https://img.shields.io/github/stars/realchendahuang/dsh-skill?style=social)](https://github.com/realchendahuang/dsh-skill)
+[![Follow @realchendahuang](https://img.shields.io/badge/Follow-%40realchendahuang-1DA1F2?logo=x&logoColor=white)](https://x.com/realchendahuang)
 
-为 AI 编程助手（Claude Code、Codex、Antigravity、Cursor 及 DSH 自身）提供权威的 DeepSeek Harness 插件与扩展开发规范。
+> **为 AI 编程助手（Claude Code、Codex、Antigravity、Cursor 及 DSH 自身）提供权威的 DeepSeek Harness 插件与扩展开发规范。**
+> 支持作为 Agent 技能直接发现、作为 Cordis 插件动态挂载，或通过 CLI 一键安装。
+
+---
+
+## 快速一键安装（推荐）
+
+无需手动寻找各个 Agent 的技能安装路径，直接运行：
+
+```bash
+# 一键安装到本机所有已支持的 Agent（DSH、Claude Code、Codex、Antigravity）
+npx dsh-skill install
+
+# 或指定安装到单个平台
+npx dsh-skill install dsh           # 仅安装到 DeepSeek Harness (~/.dsh/skills)
+npx dsh-skill install claude        # 仅安装到 Claude Code (~/.claude/skills)
+npx dsh-skill install codex         # 仅安装到 OpenAI Codex (~/.agents/skills)
+npx dsh-skill install antigravity   # 仅安装到 Google Antigravity (~/.gemini/config/skills)
+
+# 检查当前安装状态
+npx dsh-skill status
+```
 
 ---
 
@@ -21,7 +46,28 @@
 
 ---
 
-## 包含的官方规范与资产
+## 运行形态：双模支持（Skill + Plugin）
+
+为了满足不同开发者的使用习惯，本项目同时支持两种挂载形态：
+
+### 形态 1：作为标准 Agent Skill（跨客户端通用）
+将本仓库作为技能包置于各 Agent 客户端的技能目录中，Agent 即可自主调用：
+- DSH 原生：`<projectRoot>/.dsh/skills/dsh-plugin-dev` 或 `~/.dsh/skills/dsh-plugin-dev`
+- Claude Code：`~/.claude/skills/dsh-plugin-dev`
+- Codex：`~/.agents/skills/dsh-plugin-dev`
+- Google Antigravity：`~/.gemini/config/skills/dsh-plugin-dev`
+
+### 形态 2：作为 DSH Cordis 插件（运行时动态注入）
+本项目本身是一个合法的 Cordis 插件。可以在你的 `cordis.yml` 中直接声明：
+```yaml
+plugins:
+  "dsh-skill": {}
+```
+在容器启动时，它会自动向 DSH 的 `ctx.skills` 注册表动态挂载 `dsh-plugin-dev` 技能，供当前会话中的 Agent 动态披露。
+
+---
+
+## 包含的官方规范与资产全景
 
 ```text
 dsh-skill/
@@ -39,47 +85,15 @@ dsh-skill/
 │   ├── 03-hook-plugin.md    # 编写权限门禁与安全拦截钩子
 │   ├── 04-isolated-dev.md   # .dsh-dev 本地隔离调试与冒烟测试
 │   └── 05-verification.md   # 发版前严格质量质检与依赖排查清单
-└── templates/               # 经过验证的最小可用模版代码
-    ├── tool-plugin/         # 基础工具插件骨架
-    ├── hook-plugin/         # 权限拦截门禁骨架
-    └── skill-bundle/        # 标准技能包骨架
-```
-
----
-
-## 如何安装与使用
-
-### 1. 在 DeepSeek Harness 中使用（原生支持）
-
-#### 全局安装（对所有项目生效）：
-```bash
-git clone https://github.com/realchendahuang/dsh-skill.git "${DSH_HOME:-$HOME/.dsh}/skills/dsh-plugin-dev"
-```
-
-#### 项目级安装（仅对当前仓库生效）：
-```bash
-git clone https://github.com/realchendahuang/dsh-skill.git .dsh/skills/dsh-plugin-dev
-```
-
-### 2. 在 Claude Code 中使用
-
-```bash
-mkdir -p ~/.claude/skills
-git clone https://github.com/realchendahuang/dsh-skill.git ~/.claude/skills/dsh-plugin-dev
-```
-
-### 3. 在 OpenAI Codex 中使用
-
-```bash
-mkdir -p ~/.agents/skills
-git clone https://github.com/realchendahuang/dsh-skill.git ~/.agents/skills/dsh-plugin-dev
-```
-
-### 4. 在 Google Antigravity 中使用
-
-```bash
-mkdir -p ~/.gemini/config/skills
-git clone https://github.com/realchendahuang/dsh-skill.git ~/.gemini/config/skills/dsh-plugin-dev
+├── templates/               # 经过验证的最小可用模版代码
+│   ├── tool-plugin/         # 基础工具插件骨架
+│   ├── hook-plugin/         # 权限拦截门禁骨架
+│   └── skill-bundle/        # 标准技能包骨架
+├── bin/                     # CLI 跨平台一键安装工具
+├── CHANGELOG.md             # 版本历史与变更记录
+├── CONTRIBUTING.md          # 社区贡献指南
+├── SECURITY.md              # 安全政策与漏洞汇报
+└── LICENSE                  # MIT 开源协议
 ```
 
 ---
@@ -100,8 +114,9 @@ Agent 会自动识别并加载本技能：
 
 ---
 
-## 相关生态
+## 相关生态与版本历史
 
+- [版本发布历史 (Changelog)](CHANGELOG.md)
 - [DeepSeek Harness 官方仓库](https://github.com/deepseek-ai/deepseek-harness)
 - [dsh-guide (一条消息的旅行 · 交互式源码解析)](https://chendahuang.com/dsh)
 
