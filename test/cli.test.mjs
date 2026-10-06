@@ -30,7 +30,7 @@ function fakeInstall(fakeHome, target = 'claude') {
 test('SKILL.md exists and has valid frontmatter', () => {
   const skillPath = resolve(rootDir, 'SKILL.md')
   assert.ok(existsSync(skillPath), 'SKILL.md must exist')
-  const raw = readFileSync(skillPath, 'utf8')
+  const raw = readFileSync(skillPath, 'utf8').replace(/\r\n/g, '\n')
   assert.ok(raw.startsWith('---\n'), 'SKILL.md must start with a frontmatter block')
   const closing = raw.indexOf('\n---', 3)
   assert.ok(closing !== -1, 'frontmatter block must be closed with ---')
