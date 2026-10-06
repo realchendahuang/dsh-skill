@@ -5,8 +5,6 @@
 set -euo pipefail
 
 REPO="realchendahuang/dsh-skill"
-BRANCH="main"
-TARBALL_URL="https://github.com/${REPO}/archive/refs/heads/${BRANCH}.tar.gz"
 
 # ANSI colors
 CYAN='\033[36m'
@@ -15,6 +13,16 @@ YELLOW='\033[33m'
 RED='\033[31m'
 BOLD='\033[1m'
 NC='\033[0m'
+
+fetch() {
+  if command -v curl >/dev/null 2>&1; then
+    curl -fsSL "$1"
+  elif command -v wget >/dev/null 2>&1; then
+    wget -qO- "$1"
+  else
+    return 1
+  fi
+}
 
 print_banner() {
   printf "${CYAN}
@@ -54,16 +62,31 @@ if [ -f "${SCRIPT_DIR}/SKILL.md" ] && [ -d "${SCRIPT_DIR}/references" ]; then
   SOURCE_DIR="$SCRIPT_DIR"
   echo "Installing from local repository: ${SOURCE_DIR}"
 else
-  echo "Fetching latest dsh-skill release from GitHub..."
   TEMP_DIR="$(mktemp -d)"
-  if command -v curl >/dev/null 2>&1; then
-    curl -fsSL "$TARBALL_URL" | tar -xz -C "$TEMP_DIR" --strip-components=1
-  elif command -v wget >/dev/null 2>&1; then
-    wget -qO- "$TARBALL_URL" | tar -xz -C "$TEMP_DIR" --strip-components=1
-  else
+  if ! command -v curl >/dev/null 2>&1 && ! command -v wget >/dev/null 2>&1; then
     printf "${RED}Error: curl or wget is required to download dsh-skill.${NC}\n" >&2
     exit 1
   fi
+
+  # Pin to the latest GitHub release tag for reproducible installs.
+  # Override with DSH_SKILL_VERSION=<tag|main>, e.g. DSH_SKILL_VERSION=v0.2.1 install.sh
+  REF="${DSH_SKILL_VERSION:-}"
+  if [ -z "$REF" ]; then
+    echo "Resolving latest dsh-skill release..."
+    REF="$(fetch "https://api.github.com/repos/${REPO}/releases/latest" 2>/dev/null | grep -o '"tag_name": *"[^"]*"' | cut -d'"' -f4 || true)"
+  fi
+  if [ -z "$REF" ]; then
+    printf "${YELLOW}Warning: could not resolve the latest release; falling back to the main branch.${NC}\n"
+    REF="main"
+  fi
+
+  if [ "$REF" = "main" ]; then
+    TARBALL_URL="https://github.com/${REPO}/archive/refs/heads/main.tar.gz"
+  else
+    TARBALL_URL="https://github.com/${REPO}/archive/refs/tags/${REF}.tar.gz"
+  fi
+  echo "Fetching dsh-skill ${REF} from GitHub..."
+  fetch "$TARBALL_URL" | tar -xz -C "$TEMP_DIR" --strip-components=1
   SOURCE_DIR="$TEMP_DIR"
 fi
 

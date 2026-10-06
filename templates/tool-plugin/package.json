@@ -10,6 +10,11 @@
     "README.md",
     "LICENSE"
   ],
+  "scripts": {
+    "build": "node scripts/build.mjs && tsc --emitDeclarationOnly",
+    "typecheck": "tsc --noEmit",
+    "verify": "npm run typecheck && npm run build"
+  },
   "keywords": [
     "dsh-plugin",
     "deepseek-harness"

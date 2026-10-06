@@ -1,11 +1,16 @@
 # dsh-skill · DeepSeek Harness Official Plugin & Skill Development Kit Windows Installer
 # Usage in PowerShell:
 #   irm https://raw.githubusercontent.com/realchendahuang/dsh-skill/main/install.ps1 | iex
+# Pin a specific version (tag or "main"):
+#   $env:DSH_SKILL_VERSION = "v0.2.1"; irm https://raw.githubusercontent.com/realchendahuang/dsh-skill/main/install.ps1 | iex
+
+param(
+    [string]$Version = $env:DSH_SKILL_VERSION
+)
 
 $ErrorActionPreference = "Stop"
 
 $Repo = "realchendahuang/dsh-skill"
-$ZipUrl = "https://github.com/$Repo/archive/refs/heads/main.zip"
 
 Write-Host @"
 
@@ -15,6 +20,24 @@ Write-Host @"
 /____/___/_//_/____/___/ /_/|_|/_//_/____(_)
   DeepSeek Harness Plugin & Skill Development Kit (Windows)
 "@ -ForegroundColor Cyan
+
+# Pin to the latest GitHub release tag for reproducible installs.
+if (-not $Version) {
+    Write-Host "Resolving latest dsh-skill release..." -ForegroundColor Yellow
+    try {
+        $Version = (Invoke-RestMethod -Uri "https://api.github.com/repos/$Repo/releases/latest" -UseBasicParsing).tag_name
+    } catch {
+        $Version = $null
+    }
+}
+if (-not $Version -or $Version -eq "main") {
+    if (-not $Version) {
+        Write-Host "Warning: could not resolve the latest release; falling back to the main branch." -ForegroundColor Yellow
+    }
+    $ZipUrl = "https://github.com/$Repo/archive/refs/heads/main.zip"
+} else {
+    $ZipUrl = "https://github.com/$Repo/archive/refs/tags/$Version.zip"
+}
 
 $UserHome = $env:USERPROFILE
 $Targets = @{
@@ -28,13 +51,14 @@ $TempDir = Join-Path $env:TEMP ("dsh-skill-" + [Guid]::NewGuid().ToString("N"))
 New-Item -ItemType Directory -Path $TempDir -Force | Out-Null
 
 try {
-    Write-Host "Fetching latest dsh-skill release from GitHub..." -ForegroundColor Yellow
+    Write-Host "Fetching dsh-skill $Version from GitHub..." -ForegroundColor Yellow
     $ZipFile = Join-Path $TempDir "dsh-skill.zip"
     Invoke-WebRequest -Uri $ZipUrl -OutFile $ZipFile -UseBasicParsing
 
     $ExtractDir = Join-Path $TempDir "extracted"
     Expand-Archive -Path $ZipFile -DestinationPath $ExtractDir -Force
-    $SourceDir = Join-Path $ExtractDir "dsh-skill-main"
+    # Tag archives extract into a version-suffixed directory (e.g. dsh-skill-0.2.1)
+    $SourceDir = (Get-ChildItem -Path $ExtractDir -Directory | Select-Object -First 1).FullName
 
     Write-Host "`nDeploying skills to AI Agent discovery directories:" -ForegroundColor White
     foreach ($entry in $Targets.GetEnumerator()) {

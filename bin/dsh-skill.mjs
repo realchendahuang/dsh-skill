@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { cpSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { resolve, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -13,6 +13,13 @@ const command = args[0] || 'help'
 
 const home = homedir()
 
+const useColor = (Boolean(process.stdout.isTTY) || Boolean(process.env.FORCE_COLOR)) && !process.env.NO_COLOR
+const paint = (code, text) => (useColor ? `\x1b[${code}m${text}\x1b[0m` : text)
+const green = text => paint(32, text)
+const yellow = text => paint(33, text)
+const red = text => paint(31, text)
+const cyan = text => paint(36, text)
+
 const TARGETS = {
   dsh: resolve(process.env.DSH_HOME || resolve(home, '.dsh'), 'skills/dsh-plugin-dev'),
   claude: resolve(home, '.claude/skills/dsh-plugin-dev'),
@@ -20,14 +27,16 @@ const TARGETS = {
   antigravity: resolve(home, '.gemini/config/skills/dsh-plugin-dev'),
 }
 
+const CLI_SHIM_PATHS = [resolve(home, '.local/bin/dsh-skill'), resolve(home, '.local/bin/dsh-skill.cmd')]
+
 function printBanner() {
-  console.log('\x1b[36m%s\x1b[0m', `
+  console.log(cyan(`
    ___  _____ __  __   ____  __ ___ __   __
   / _ \\/ __/ // / /  / __/ / //_// // / / /
  / // /\\ \\/ _  / /__ \\ \\  / ,<  / // /_/ /_
 /____/___/_//_/____/___/ /_/|_|/_//_/____(_)
   DeepSeek Harness Plugin & Skill Development Kit
-  `)
+  `))
 }
 
 function printHelp() {
@@ -56,8 +65,29 @@ Install Targets:
 `)
 }
 
+function printVersion() {
+  try {
+    const pkg = JSON.parse(readFileSync(resolve(rootDir, 'package.json'), 'utf8'))
+    console.log(pkg.version)
+  } catch {
+    console.error('Unable to determine version (package.json not found).')
+    process.exit(1)
+  }
+}
+
+// Refresh installs wipe the destination to avoid stale leftover files,
+// but only when it is a directory this tool owns (marked by SKILL.md)
+// and never the repository itself.
+function cleanStaleInstall(destPath) {
+  if (resolve(destPath) === rootDir) return
+  if (!existsSync(destPath)) return
+  if (!existsSync(resolve(destPath, 'SKILL.md'))) return
+  rmSync(destPath, { recursive: true, force: true })
+}
+
 function installTo(targetName, destPath) {
   try {
+    cleanStaleInstall(destPath)
     mkdirSync(destPath, { recursive: true })
     const itemsToCopy = ['SKILL.md', 'references', 'playbooks', 'templates', 'bin']
     for (const item of itemsToCopy) {
@@ -70,10 +100,10 @@ function installTo(targetName, destPath) {
         cpSync(src, dst, { recursive: true })
       }
     }
-    console.log(`\x1b[32m✔ Installed to ${targetName}:\x1b[0m ${destPath}`)
+    console.log(green(`✔ Installed to ${targetName}:`) + ` ${destPath}`)
     return true
   } catch (err) {
-    console.error(`\x1b[31m✖ Failed to install to ${targetName}:\x1b[0m ${err.message}`)
+    console.error(red(`✖ Failed to install to ${targetName}:`) + ` ${err.message}`)
     return false
   }
 }
@@ -82,11 +112,26 @@ function installCliShim() {
   try {
     const localBin = resolve(home, '.local/bin')
     mkdirSync(localBin, { recursive: true })
-    const shimPath = resolve(localBin, 'dsh-skill')
     const primaryDir = TARGETS.codex || TARGETS.dsh
     const scriptTarget = resolve(primaryDir, 'bin/dsh-skill.mjs')
 
-    const shimContent = `#!/usr/bin/env bash
+    if (process.platform === 'win32') {
+      const shimPath = resolve(localBin, 'dsh-skill.cmd')
+      const shimContent = [
+        '@echo off',
+        'where node >nul 2>nul',
+        'if %errorlevel% neq 0 (',
+        '  echo Error: Node.js is required to run dsh-skill CLI.',
+        '  exit /b 1',
+        ')',
+        `node "${scriptTarget}" %*`,
+        '',
+      ].join('\r\n')
+      writeFileSync(shimPath, shimContent)
+      console.log(green('✔ CLI executable linked to:') + ` ${shimPath}`)
+    } else {
+      const shimPath = resolve(localBin, 'dsh-skill')
+      const shimContent = `#!/usr/bin/env bash
 if command -v node >/dev/null 2>&1; then
   exec node "${scriptTarget}" "$@"
 else
@@ -94,10 +139,12 @@ else
   exit 1
 fi
 `
-    writeFileSync(shimPath, shimContent, { mode: 0o755 })
-    console.log(`\x1b[32m✔ CLI executable linked to:\x1b[0m ${shimPath}`)
+      writeFileSync(shimPath, shimContent, { mode: 0o755 })
+      console.log(green('✔ CLI executable linked to:') + ` ${shimPath}`)
+    }
     return true
   } catch (err) {
+    console.error(red('✖ Failed to install CLI shim:') + ` ${err.message}`)
     return false
   }
 }
@@ -105,24 +152,34 @@ fi
 function runInstall() {
   printBanner()
   const targetArg = (args[1] || 'all').toLowerCase()
+  let ok = true
 
   if (targetArg === 'all') {
     console.log('Installing dsh-plugin-dev skill to all platforms...\n')
     for (const [name, path] of Object.entries(TARGETS)) {
-      installTo(name, path)
+      ok = installTo(name, path) && ok
     }
-    installCliShim()
+    ok = installCliShim() && ok
   } else if (TARGETS[targetArg]) {
     console.log(`Installing dsh-plugin-dev skill to ${targetArg}...\n`)
-    installTo(targetArg, TARGETS[targetArg])
-    installCliShim()
+    ok = installTo(targetArg, TARGETS[targetArg]) && ok
+    ok = installCliShim() && ok
   } else {
-    console.error(`Unknown target: ${targetArg}`)
+    console.error(red(`Unknown target: ${targetArg}`))
     console.log('Available targets: all, dsh, claude, codex, antigravity')
     process.exit(1)
   }
 
-  console.log('\n\x1b[36mInstallation complete!\x1b[0m Your AI agent now has full mastery over DSH plugin development.\n')
+  if (!ok) {
+    console.error(`\n${red('Installation finished with errors.')} Please review the output above.\n`)
+    process.exit(1)
+  }
+
+  console.log(`\n${cyan('Installation complete!')} Your AI agent now has full mastery over DSH plugin development.\n`)
+}
+
+function shimInstalled() {
+  return CLI_SHIM_PATHS.some(path => existsSync(path))
 }
 
 function runStatus() {
@@ -130,23 +187,44 @@ function runStatus() {
   console.log('Skill Installation Status across platforms:\n')
   for (const [name, path] of Object.entries(TARGETS)) {
     const isInstalled = existsSync(resolve(path, 'SKILL.md'))
-    const statusText = isInstalled
-      ? '\x1b[32mInstalled\x1b[0m'
-      : '\x1b[33mNot Installed\x1b[0m'
+    const statusText = isInstalled ? green('Installed') : yellow('Not Installed')
     console.log(`- ${name.padEnd(12)}: ${statusText} (${path})`)
   }
-  const shimInstalled = existsSync(resolve(home, '.local/bin/dsh-skill'))
-  console.log(`- ${'cli (PATH)'.padEnd(12)}: ${shimInstalled ? '\x1b[32mInstalled\x1b[0m' : '\x1b[33mNot Installed\x1b[0m'} (${resolve(home, '.local/bin/dsh-skill')})`)
+  const shimPath = CLI_SHIM_PATHS.find(path => existsSync(path)) || CLI_SHIM_PATHS[0]
+  const shimText = shimInstalled() ? green('Installed') : yellow('Not Installed')
+  console.log(`- ${'cli (PATH)'.padEnd(12)}: ${shimText} (${shimPath})`)
   console.log('')
+}
+
+function resolveTemplate(templateDirName) {
+  let templateDir = resolve(rootDir, templateDirName)
+  if (existsSync(resolve(templateDir, 'src/index.ts')) || existsSync(resolve(templateDir, 'SKILL.md'))) {
+    return templateDir
+  }
+  for (const candPath of Object.values(TARGETS)) {
+    const cand = resolve(candPath, templateDirName)
+    if (existsSync(resolve(cand, 'src/index.ts')) || existsSync(resolve(cand, 'SKILL.md'))) {
+      return cand
+    }
+  }
+  return null
+}
+
+function failInit(message) {
+  console.error(red('Error:') + ` ${message}`)
+  process.exit(1)
 }
 
 function runInit() {
   printBanner()
   const pluginName = args[1]
   if (!pluginName) {
-    console.error('\x1b[31mError:\x1b[0m Please provide a plugin name.')
-    console.log('Example: dsh-skill init dsh-my-tools [--type tool|hook|skill]\n')
-    process.exit(1)
+    failInit('Please provide a plugin name.')
+  }
+
+  // npm package naming rules: letters, digits and - _ . ~ (no leading . or _)
+  if (!/^[a-z0-9][a-z0-9-._~]*$/i.test(pluginName)) {
+    failInit(`"${pluginName}" is not a valid plugin name. Use letters, digits and - _ . ~ (must start with a letter or digit).`)
   }
 
   // Parse type flag: --type <type> or --template <type>
@@ -155,53 +233,43 @@ function runInit() {
   if (typeIndex !== -1 && args[typeIndex + 1]) {
     templateType = args[typeIndex + 1].toLowerCase()
   }
+  if (!['tool', 'hook', 'skill'].includes(templateType)) {
+    failInit(`Unknown template type "${templateType}". Available types: tool, hook, skill.`)
+  }
 
   const targetDir = resolve(process.cwd(), pluginName)
   if (existsSync(targetDir)) {
-    console.error(`\x1b[31mError:\x1b[0m Directory ${pluginName} already exists.`)
-    process.exit(1)
+    failInit(`Directory ${pluginName} already exists.`)
   }
 
-  console.log(`Scaffolding new DSH ${templateType} in \x1b[36m${pluginName}\x1b[0m...\n`)
+  console.log(`Scaffolding new DSH ${templateType} in ${cyan(pluginName)}...\n`)
 
   if (templateType === 'skill') {
+    const templateSkill = resolveTemplate('templates/skill-bundle')
+    if (!templateSkill) {
+      failInit('Skill template not found (templates/skill-bundle/SKILL.md). Please reinstall dsh-skill.')
+    }
     mkdirSync(targetDir, { recursive: true })
     mkdirSync(resolve(targetDir, 'references'), { recursive: true })
     mkdirSync(resolve(targetDir, 'playbooks'), { recursive: true })
-    let templateSkill = resolve(rootDir, 'templates/skill-bundle/SKILL.md')
-    if (!existsSync(templateSkill)) {
-      for (const candPath of Object.values(TARGETS)) {
-        const cand = resolve(candPath, 'templates/skill-bundle/SKILL.md')
-        if (existsSync(cand)) {
-          templateSkill = cand
-          break
-        }
-      }
-    }
-    const skillContent = readFileSync(templateSkill, 'utf8')
+    const skillContent = readFileSync(resolve(templateSkill, 'SKILL.md'), 'utf8')
       .replace(/<skill-name>/g, pluginName)
     writeFileSync(resolve(targetDir, 'SKILL.md'), skillContent)
-    console.log(`\x1b[32m✔ Skill bundle ${pluginName} created successfully!\x1b[0m\n`)
+    console.log(green(`✔ Skill bundle ${pluginName} created successfully!`) + '\n')
     return
   }
 
   // tool or hook plugin
   const templateDirName = templateType === 'hook' ? 'templates/hook-plugin' : 'templates/tool-plugin'
-  let templateDir = resolve(rootDir, templateDirName)
-  if (!existsSync(templateDir)) {
-    for (const candPath of Object.values(TARGETS)) {
-      const cand = resolve(candPath, templateDirName)
-      if (existsSync(cand)) {
-        templateDir = cand
-        break
-      }
-    }
+  const templateDir = resolveTemplate(templateDirName)
+  if (!templateDir) {
+    failInit(`Template not found (${templateDirName}/src/index.ts). Please reinstall dsh-skill.`)
   }
 
   mkdirSync(resolve(targetDir, 'src'), { recursive: true })
   mkdirSync(resolve(targetDir, 'scripts'), { recursive: true })
 
-  // 1. Copy template files with fallback
+  // 1. Copy template files
   cpSync(resolve(templateDir, 'src/index.ts'), resolve(targetDir, 'src/index.ts'))
 
   // 2. Write package.json
@@ -219,7 +287,7 @@ function runInit() {
       },
     },
     scripts: {
-      build: 'node scripts/build.mjs',
+      build: 'node scripts/build.mjs && tsc --emitDeclarationOnly',
       typecheck: 'tsc --noEmit',
       verify: 'npm run typecheck && npm run build',
     },
@@ -289,7 +357,7 @@ console.log('Build completed: dist/index.js')
   // 6. Write README.md
   writeFileSync(resolve(targetDir, 'README.md'), `# ${pluginName}\n\nA ${templateType} plugin for DeepSeek Harness.\n`)
 
-  console.log(`\x1b[32m✔ Plugin ${pluginName} (${templateType}) created successfully!\x1b[0m\n`)
+  console.log(green(`✔ Plugin ${pluginName} (${templateType}) created successfully!`) + '\n')
   console.log('Next steps:')
   console.log(`  cd ${pluginName}`)
   console.log('  pnpm install')
@@ -299,18 +367,18 @@ console.log('Build completed: dist/index.js')
 function runCheck() {
   printBanner()
   const targetDir = resolve(process.cwd(), args[1] || '.')
-  console.log(`Auditing DSH plugin compliance in: \x1b[36m${targetDir}\x1b[0m\n`)
+  console.log(`Auditing DSH plugin compliance in: ${cyan(targetDir)}\n`)
 
   let passed = 0
   let failed = 0
 
   function pass(msg) {
-    console.log(`\x1b[32m[PASS]\x1b[0m ${msg}`)
+    console.log(`${green('[PASS]')} ${msg}`)
     passed++
   }
 
   function fail(msg) {
-    console.log(`\x1b[31m[FAIL]\x1b[0m ${msg}`)
+    console.log(`${red('[FAIL]')} ${msg}`)
     failed++
   }
 
@@ -371,7 +439,8 @@ function runCheck() {
   const srcPath = resolve(targetDir, 'src/index.ts')
   if (existsSync(srcPath)) {
     const srcCode = readFileSync(srcPath, 'utf8')
-    if (srcCode.includes('apply')) {
+    const applyPattern = /export\s+(?:default\s+)?(?:async\s+)?function\s+apply\b|export\s+(?:const|let|var)\s+apply\b/
+    if (applyPattern.test(srcCode)) {
       pass('src/index.ts exists and exports apply(ctx).')
     } else {
       fail('src/index.ts does not export an apply() lifecycle function.')
@@ -391,7 +460,7 @@ function runCheck() {
     }
   }
 
-  console.log(`\nAudit finished: \x1b[32m${passed} passed\x1b[0m, \x1b[31m${failed} failed\x1b[0m.\n`)
+  console.log(`\nAudit finished: ${green(`${passed} passed`)}, ${red(`${failed} failed`)}.\n`)
   if (failed > 0) {
     process.exit(1)
   }
@@ -400,13 +469,18 @@ function runCheck() {
 function runUpdate() {
   printBanner()
   console.log('Refreshing installed skills across all platforms...\n')
+  let ok = true
   for (const [name, path] of Object.entries(TARGETS)) {
     if (existsSync(path)) {
-      installTo(name, path)
+      ok = installTo(name, path) && ok
     }
   }
-  installCliShim()
-  console.log('\n\x1b[36mUpdate completed successfully!\x1b[0m\n')
+  ok = installCliShim() && ok
+  if (!ok) {
+    console.error(`\n${red('Update finished with errors.')} Please review the output above.\n`)
+    process.exit(1)
+  }
+  console.log(`\n${cyan('Update completed successfully!')}\n`)
 }
 
 function runUninstall() {
@@ -416,17 +490,18 @@ function runUninstall() {
   for (const [name, path] of Object.entries(TARGETS)) {
     if (existsSync(path)) {
       rmSync(path, { recursive: true, force: true })
-      console.log(`\x1b[32m✔ Removed from ${name}:\x1b[0m ${path}`)
+      console.log(green(`✔ Removed from ${name}:`) + ` ${path}`)
       count++
     }
   }
-  const shimPath = resolve(home, '.local/bin/dsh-skill')
-  if (existsSync(shimPath)) {
-    rmSync(shimPath, { force: true })
-    console.log(`\x1b[32m✔ Removed CLI executable:\x1b[0m ${shimPath}`)
-    count++
+  for (const shimPath of CLI_SHIM_PATHS) {
+    if (existsSync(shimPath)) {
+      rmSync(shimPath, { force: true })
+      console.log(green('✔ Removed CLI executable:') + ` ${shimPath}`)
+      count++
+    }
   }
-  console.log(`\n\x1b[36mUninstallation complete! Cleaned up ${count} items.\x1b[0m\n`)
+  console.log(`\n${cyan('Uninstallation complete!')} Cleaned up ${count} items.\n`)
 }
 
 switch (command) {
@@ -448,10 +523,18 @@ switch (command) {
   case 'uninstall':
     runUninstall()
     break
+  case 'version':
+  case '--version':
+  case '-v':
+    printVersion()
+    break
   case 'help':
   case '--help':
   case '-h':
-  default:
     printHelp()
     break
+  default:
+    console.error(red(`Unknown command: ${command}`) + '\n')
+    printHelp()
+    process.exit(1)
 }
