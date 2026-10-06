@@ -30,7 +30,7 @@
   "scripts": {
     "build": "node scripts/build.mjs && tsc --emitDeclarationOnly",
     "typecheck": "tsc --noEmit",
-    "test": "node --test test/*.test.mjs",
+    "test": "node --test",
     "verify": "npm run typecheck && npm run build && npm run test"
   },
   "keywords": [
