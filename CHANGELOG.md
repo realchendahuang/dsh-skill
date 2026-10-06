@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0] - 2026-10-05
+
+### Added
+- **Zero-Dependency One-Line Installers**:
+  - `install.sh`: POSIX shell installer for macOS, Linux, and WSL via `curl -fsSL https://raw.githubusercontent.com/realchendahuang/dsh-skill/main/install.sh | bash`.
+  - `install.ps1`: Native PowerShell installer for Windows via `irm https://raw.githubusercontent.com/realchendahuang/dsh-skill/main/install.ps1 | iex`.
+  - Automatic injection of executable CLI shim `dsh-skill` into user's `~/.local/bin`.
+- **Multi-Template Scaffolding**:
+  - `dsh-skill init <name> [--type tool|hook|skill]` for instant bootstrapping of tools, hooks, or skill bundles.
+- **CLI Lifecycle Management**:
+  - `dsh-skill update`: Refresh installed skills and CLI across all platforms.
+  - `dsh-skill uninstall`: Cleanly remove skill files and unbind the CLI shim.
+- **8-Stage Compliance Check**:
+  - Upgraded `dsh-skill check` with automated diagnostics for `tsconfig.json` and build bundling externalization.
+- **Visual Architecture Blueprint**:
+  - Added interactive Mermaid 3-tier architectural flow diagram in bilingual documentation.
+
 ## [0.1.0] - 2026-10-05
 
 ### Added

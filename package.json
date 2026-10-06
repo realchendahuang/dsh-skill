@@ -1,6 +1,6 @@
 {
   "name": "dsh-skill",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Official development kit and agent skill for DeepSeek Harness (DSH) plugins and extensions.",
   "type": "module",
   "main": "./dist/index.js",
