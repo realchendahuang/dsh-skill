@@ -1,6 +1,6 @@
 {
   "name": "dsh-skill",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Official development kit and agent skill for DeepSeek Harness (DSH) plugins and extensions.",
   "type": "module",
   "main": "./dist/index.js",
@@ -28,7 +28,7 @@
     }
   },
   "scripts": {
-    "build": "node scripts/build.mjs",
+    "build": "node scripts/build.mjs && tsc --emitDeclarationOnly",
     "typecheck": "tsc --noEmit",
     "test": "node --test test/*.test.mjs",
     "verify": "npm run typecheck && npm run build && npm run test"
@@ -55,6 +55,7 @@
   },
   "homepage": "https://github.com/realchendahuang/dsh-skill#readme",
   "devDependencies": {
+    "@types/node": "^22.0.0",
     "esbuild": "^0.23.0",
     "typescript": "^5.5.0"
   }

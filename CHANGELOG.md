@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.1] - 2026-10-06
+
+### Fixed
+- **`dsh-skill uninstall` crashed**: `rmSync` was used without being imported, raising a `ReferenceError` on every uninstall. Added isolated-HOME regression tests covering `uninstall` and `update`.
+- **Missing type declarations**: `package.json` pointed `types` at `./dist/index.d.ts`, but the build never emitted it. `npm run build` now runs `tsc --emitDeclarationOnly` after esbuild (also fixed in scaffolding output and templates).
+- **Broken CI & Release pipelines**: `setup-node`'s pnpm cache failed with "packages field missing or empty" because `pnpm-workspace.yaml` lacked a `packages` field — every push since v0.2.0 was red. Added the field plus the missing `@types/node` devDependency so `pnpm run typecheck` passes again.
+
+### Changed
+- CI now runs on Windows in addition to Ubuntu/macOS, and installs with `--frozen-lockfile`.
+- Release workflow runs full `verify` before creating the GitHub Release, and publishes to npm with provenance when the `NPM_TOKEN` secret is configured (skips otherwise).
+- `install.sh` / `install.ps1` pin to the latest GitHub release tag instead of the mutable `main` branch; override with `DSH_SKILL_VERSION`.
+- CLI hardening: Windows installs now also create a `dsh-skill.cmd` shim; install/update failures propagate to the exit code; unknown commands exit non-zero; `init` validates plugin names and fails gracefully on missing templates; `check` matches a real `apply()` export pattern; ANSI colors respect `NO_COLOR` and non-TTY output; `update` removes stale files from previous installs; added `--version`.
+
 ## [0.2.0] - 2026-10-05
 
 ### Added
