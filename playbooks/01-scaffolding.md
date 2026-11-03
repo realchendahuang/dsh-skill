@@ -52,12 +52,12 @@ dsh-my-plugin/
     "deepseek-harness"
   ],
   "peerDependencies": {
-    "@deepseek-ai/cordis": ">=1.0.0",
-    "@deepseek-ai/dsh-tools": ">=1.0.0"
+    "@deepseek-ai/cordis": "4.0.6-alpha.2",
+    "@deepseek-ai/dsh-tools": "0.2.2-alpha.3"
   },
   "devDependencies": {
-    "@deepseek-ai/cordis": "^1.0.0",
-    "@deepseek-ai/dsh-tools": "^1.0.0",
+    "@deepseek-ai/cordis": "4.0.6-alpha.2",
+    "@deepseek-ai/dsh-tools": "0.2.2-alpha.3",
     "esbuild": "^0.23.0",
     "typescript": "^5.5.0"
   }
