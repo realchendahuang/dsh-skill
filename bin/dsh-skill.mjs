@@ -293,15 +293,16 @@ function runInit() {
     },
     keywords: ['dsh-plugin', 'deepseek-harness'],
     peerDependencies: {
-      '@deepseek-ai/cordis': '>=1.0.0',
-      ...(templateType === 'tool' ? { '@deepseek-ai/dsh-tools': '>=1.0.0' } : {}),
+      '@deepseek-ai/cordis': '4.0.6-alpha.2',
+      '@deepseek-ai/dsh-tools': '0.2.2-alpha.3',
     },
     devDependencies: {
-      '@deepseek-ai/cordis': '^1.0.0',
-      ...(templateType === 'tool' ? { '@deepseek-ai/dsh-tools': '^1.0.0' } : {}),
+      '@deepseek-ai/cordis': '4.0.6-alpha.2',
+      '@deepseek-ai/dsh-tools': '0.2.2-alpha.3',
       esbuild: '^0.23.0',
       typescript: '^5.5.0',
     },
+    engines: { node: '>=24.9.0', dsh: '>=0.2.2-0 <0.3.0' },
   }
   writeFileSync(resolve(targetDir, 'package.json'), JSON.stringify(pkgContent, null, 2) + '\n')
 
